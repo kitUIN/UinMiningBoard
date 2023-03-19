@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "uin_mining_board",
+  "version": "${version}",
+  "name": "UinMiningBoard",
+  "description": "A Server Mod: Mine ScoreBoard",
+  "authors": [
+    "kitUIN"
+  ],
+  "contact": {
+    "website": "https://github.com/kitUIN/UinMiningBoard",
+    "repo": "https://github.com/kitUIN/UinMiningBoard"
+  },
+  "license": "All-Rights-Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "client": [
+      "kituin.github.uinminingboard.client.UinMiningBoardClient"
+    ],
+    "main": [
+      "kituin.github.uinminingboard.UinMiningBoard"
+    ]
+  },
+  "mixins": [
+    "UinMiningBoard.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.10",
+    "fabric": "*",
+    "minecraft": "1.19.2"
+  }
+}
