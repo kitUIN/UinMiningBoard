@@ -10,6 +10,13 @@
 看图就明白了:
 ![image](https://user-images.githubusercontent.com/68675068/226177277-ec0f71b0-e637-4105-9129-688a659f4015.png)
 
+### 命令
+- `/uinminingboard help` 帮助
+- `/uinminingboard score <玩家>` 获取玩家的挖掘量(不填玩家就是获取自己)
+- 以下是OP才能使用的命令
+  - `/uinminingboard ban <玩家>` 禁止玩家上榜
+  - `/uinminingboard unban <玩家>` 允许玩家上榜
+  - `/uinminingboard redirect <玩家>` 重定向玩家,用于迁移后uuid发生变化的场景,如果玩家不需要重定向会提示
 ### 联动
 挖掘榜单数据可以从[FiFuMiningList](https://github.com/Core2002/MiningList)迁移
 
