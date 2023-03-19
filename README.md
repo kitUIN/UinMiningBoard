@@ -13,6 +13,6 @@
 ### 联动
 挖掘榜单数据可以从[FiFuMiningList]https://github.com/Core2002/MiningList迁移
 
-直接将`data.json``uuid2name.json``ignore.json`复制粘贴覆盖掉`Fabric`服务端`config`文件夹中同名文件即可
+直接将`data.json` `uuid2name.json` `ignore.json`复制粘贴覆盖掉`Fabric`服务端`config`文件夹中同名文件即可
 ### 缘起
 该模组为了[青岛科技大学-MC协会](https://skin.qustmc.cn/) 开发
