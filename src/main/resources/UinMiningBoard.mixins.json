@@ -4,7 +4,7 @@
   "package": "kituin.github.uinminingboard.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ServerWorldMixin",
+    "ServerWorldMixin"
   ],
   "client": [
   ],

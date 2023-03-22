@@ -13,8 +13,9 @@ public class UinMiningBoardConfig {
             .disableHtmlEscaping().setLenient().setPrettyPrinting()
             .create();
 
-    public String displayName= "挖掘榜";
-
+    public String displayMineName = "挖掘榜";
+    public String displayDeathName = "死亡榜";
+    public int interval = 60;
     public UinMiningBoardConfig()
     {
 

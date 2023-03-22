@@ -1,32 +1,29 @@
 package kituin.github.uinminingboard;
 
-import com.mojang.logging.LogUtils;
 import kituin.github.uinminingboard.data.FileData;
 import net.minecraft.scoreboard.ScoreboardCriterion;
 import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.scoreboard.ScoreboardPlayerScore;
 import net.minecraft.scoreboard.ServerScoreboard;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import org.slf4j.Logger;
 
 import java.util.Map;
 
-import static kituin.github.uinminingboard.UinMiningBoard.CONFIG;
-import static kituin.github.uinminingboard.UinMiningBoard.MOD_ID;
+import static kituin.github.uinminingboard.UinMiningBoard.*;
 
 public class Middleware {
     public static ServerScoreboard SCOREBOARD;
-    public static ScoreboardObjective SCOREBOARD_OBJECTIVE;
+    public static ScoreboardObjective MINE_OBJECTIVE;
+    public static ScoreboardObjective DEATH_OBJECTIVE;
     public static FileData SCORE_DATA;
     public static FileData UUID_DATA;
     public static FileData IGNORE_DATA;
     public static FileData REDIRECT_DATA;
-    private static final Logger LOGGER = LogUtils.getLogger();
+
 
     public Middleware() {
-        SCOREBOARD_OBJECTIVE = SCOREBOARD.addObjective(MOD_ID, ScoreboardCriterion.DUMMY, Text.literal(CONFIG.displayName), ScoreboardCriterion.RenderType.HEARTS);
-        SCOREBOARD.updateObjective(SCOREBOARD_OBJECTIVE);
         SCORE_DATA = FileData.load("data");
         UUID_DATA = FileData.load("uuid2name");
         IGNORE_DATA = FileData.load("ignore");
@@ -38,8 +35,8 @@ public class Middleware {
         if (IGNORE_DATA.containsKey(uuid)) {
             return;
         }
-        String playerName = UUID_DATA.getItem(REDIRECT_DATA.getItemOrDefault(uuid));
-        ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(playerName, SCOREBOARD_OBJECTIVE);
+        String playerName = UUID_DATA.getItem(uuid);
+        ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(playerName, MINE_OBJECTIVE);
         int score = playerScore.getScore() + 1;
         SCORE_DATA.addItem(REDIRECT_DATA.getItemOrDefault(uuid), Integer.toString(score));
         playerScore.setScore(score);
@@ -56,33 +53,44 @@ public class Middleware {
 
     public void putUuid2Name(ServerPlayerEntity player) {
         putRedirect(player);
-        String uuid = player.getUuidAsString();
+        String redirectUuid = player.getUuidAsString();
         String name = player.getEntityName();
-        if (!UUID_DATA.containsKey(REDIRECT_DATA.getItemOrDefault(uuid))) {
-            UUID_DATA.addItem(REDIRECT_DATA.getItemOrDefault(uuid), name);
+        String uuid = REDIRECT_DATA.getItemOrDefault(redirectUuid);
+        if (!UUID_DATA.containsKey(uuid)) {
+            UUID_DATA.addItem(uuid, name);
             LOGGER.info("uuid2name.json <- " + uuid + " (" + name + ")");
         }
     }
 
-    public static void update(Map.Entry<String, String> entry) {
-        ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(UUID_DATA.getItem(REDIRECT_DATA.getItemOrDefault(entry.getKey())), SCOREBOARD_OBJECTIVE);
-        if (IGNORE_DATA.containsKey(entry.getKey())) {
-            playerScore.setScore(0);
+    public static void updatePlayerScore(String redirectUuid) {
+        String uuid = REDIRECT_DATA.getItemOrDefault(redirectUuid);
+        String playerName = UUID_DATA.getItem(uuid);
+        if (playerName == null) {
+            return;
+        }
+        if (IGNORE_DATA.containsKey(uuid)) {
+            SCOREBOARD.updatePlayerScore(playerName, MINE_OBJECTIVE);
         } else {
-            playerScore.setScore(Integer.parseInt(entry.getValue()));
+            ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(playerName, MINE_OBJECTIVE);
+            playerScore.setScore(Integer.parseInt(SCORE_DATA.getItem(uuid)));
+            SCOREBOARD.updateScore(playerScore);
         }
-        SCOREBOARD.updateScore(playerScore);
     }
 
-    public static void updateDefault() {
+    public static void updateAll() {
         for (Map.Entry<String, String> entry : SCORE_DATA.getItems().entrySet()) {
-            update(entry);
+            updatePlayerScore(entry.getKey());
         }
     }
 
-//    public static void updateSorted() {
-//        for (Map.Entry<String, String> entry : SCORE_DATA.sort()) {
-//            update(entry);
-//        }
-//    }
+    public static void show(MinecraftServer server) {
+        ScoreboardObjective objectiveForSlot = server.getScoreboard().getObjectiveForSlot(1);
+        if (objectiveForSlot == null) {
+            server.getScoreboard().setObjectiveSlot(1, MINE_OBJECTIVE);
+        } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
+            server.getScoreboard().setObjectiveSlot(1, MINE_OBJECTIVE);
+        } else {
+            server.getScoreboard().setObjectiveSlot(1, DEATH_OBJECTIVE);
+        }
+    }
 }

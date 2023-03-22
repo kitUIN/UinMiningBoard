@@ -1,7 +1,8 @@
 # UinMiningBoard
 - Minecraft Fabric Server Mine ScoreBoard
-- 挖掘榜单
+- 挖掘榜单与死亡榜单
 
+挖掘榜单与死亡榜单每个一分钟轮换
 
 只能装在`Fabric 1.19.2`服务端,客户端无效
 
@@ -13,10 +14,13 @@
 ### 命令
 - `/uinminingboard help` 帮助
 - `/uinminingboard score <玩家>` 获取玩家的挖掘量(不填玩家就是获取自己)
+- `/uinminingboard death <玩家>` 获取玩家的死亡次数(不填玩家就是获取自己)
+- `/uinminingboard show` 重载计分板
 - 以下是OP才能使用的命令
-  - `/uinminingboard ban <玩家>` 禁止玩家上榜
-  - `/uinminingboard unban <玩家>` 允许玩家上榜
+  - `/uinminingboard ban <玩家>` 禁止玩家上挖掘榜
+  - `/uinminingboard unban <玩家>` 允许玩家上挖掘榜
   - `/uinminingboard redirect <玩家>` 重定向玩家,用于迁移后uuid发生变化的场景,如果玩家不需要重定向会提示
+  - `/uinminingboard reload` 重新载入数据文件
 
 ### 已知bug
 由于`ScoreBoard`由原版提供,其数值限制为`2147483648`,故挖掘量最大不能超过该值,不然变负数

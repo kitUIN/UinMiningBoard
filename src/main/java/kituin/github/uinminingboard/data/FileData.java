@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static kituin.github.uinminingboard.UinMiningBoard.LOGGER;
+
 public class FileData {
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping().setLenient().setPrettyPrinting()
@@ -84,12 +86,16 @@ public class FileData {
     }
 
     public String getItem(String key) {
-
-        return items.get(key);
+        if (items.containsKey(key)) {
+            return items.get(key);
+        } else {
+            LOGGER.error("无法找到UUID:" + key + "的玩家名称");
+            return null;
+        }
     }
-    public String getItemOrDefault(String key) {
 
-        return items.getOrDefault(key,key);
+    public String getItemOrDefault(String key) {
+        return items.getOrDefault(key, key);
     }
 
     public Boolean containsKey(String key) {
