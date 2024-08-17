@@ -38,8 +38,9 @@ public class UinMiningBoard implements ModInitializer {
 
         // 服务器启动
         SERVER_STARTED.register((server) -> {
+            MIDDLEWARE = new Middleware();
             SCOREBOARD = server.getScoreboard();
-            try{
+            try {
                 MINE_OBJECTIVE = server.getScoreboard().addObjective(
                         MOD_ID + "_mine",
                         ScoreboardCriterion.DUMMY,
@@ -56,14 +57,13 @@ public class UinMiningBoard implements ModInitializer {
                         null
                 );
                 LOGGER.info("添加计分板");
-            }catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 MINE_OBJECTIVE = server.getScoreboard().getNullableObjective(MOD_ID + "_mine");
                 DEATH_OBJECTIVE = server.getScoreboard().getNullableObjective(MOD_ID + "_deaths");
                 LOGGER.info("加载计分板");
             }
             server.getScoreboard().updateObjective(MINE_OBJECTIVE);
             server.getScoreboard().updateObjective(DEATH_OBJECTIVE);
-            MIDDLEWARE = new Middleware();
             TIMER = new Timer();
             TIMER.schedule(new TimerTask() {
                 @Override
@@ -82,13 +82,16 @@ public class UinMiningBoard implements ModInitializer {
                 }
             }, 0, CONFIG.interval * 1000L);
         });
-        SERVER_STOPPING.register((server)->{
+        SERVER_STOPPING.register((server) -> {
+            SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
             TIMER.cancel();
         });
         // 破坏方块事件
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, entity) -> Middleware.updateScorePreBroken((ServerPlayerEntity) player));
         // 进入服务器事件
         PlayerJoinedCallback.EVENT.register((player) -> {
+            Middleware.updateScorePreBroken(player);
+            Middleware.updateScoreDeath(player);
             player.getServer().getScoreboard().updateExistingObjective(MINE_OBJECTIVE);
             player.getServer().getScoreboard().updateExistingObjective(DEATH_OBJECTIVE);
             return null;
