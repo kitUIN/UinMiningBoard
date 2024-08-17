@@ -137,7 +137,7 @@ public class UinMiningBoardCommand {
 
     public static int reload(CommandContext<ServerCommandSource> context) {
         IGNORE_DATA = FileData.load("ignore");
-        UinMiningBoardConfig.saveConfig(CONFIG);
+        CONFIG = UinMiningBoardConfig.loadConfig();
         setTimer();
         context.getSource().sendFeedback(() -> Text.literal("数据文件已经重载"), false);
         return 1;

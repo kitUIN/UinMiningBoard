@@ -7,6 +7,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class UinMiningBoardConfig {
     private static final Gson GSON = new GsonBuilder()
@@ -16,6 +17,7 @@ public class UinMiningBoardConfig {
     public String displayMineName = "挖掘榜";
     public String displayDeathName = "死亡榜";
     public int interval = 60;
+    public List<String> botPrefix = List.of("bot_","BOT_");
     public UinMiningBoardConfig()
     {
 

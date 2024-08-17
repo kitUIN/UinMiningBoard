@@ -91,12 +91,16 @@ public class UinMiningBoard implements ModInitializer {
         PlayerJoinedCallback.EVENT.register((player) -> {
             String playerName = player.getDisplayName().getString();
             ServerScoreboard scoreboard = player.getServer().getScoreboard();
-            if (playerName.startsWith("bot_") || playerName.startsWith("BOT_")) {
-                IGNORE_DATA.addItem(player.getUuidAsString(), String.valueOf(System.currentTimeMillis()));
-                Middleware.cleanScorePreBroken(player);
-                Middleware.cleanScoreDeath(player);
-                return null;
+            for (int i = 0; i < CONFIG.botPrefix.size(); i++) {
+                String n = CONFIG.botPrefix.get(i);
+                if (playerName.startsWith(n)) {
+                    IGNORE_DATA.addItem(player.getUuidAsString(), String.valueOf(System.currentTimeMillis()));
+                    Middleware.cleanScorePreBroken(player);
+                    Middleware.cleanScoreDeath(player);
+                    return null;
+                }
             }
+
             Middleware.updateScorePreBroken(player);
             Middleware.updateScoreDeath(player);
             scoreboard.updateExistingObjective(MINE_OBJECTIVE);
