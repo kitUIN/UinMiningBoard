@@ -15,6 +15,7 @@ import net.minecraft.scoreboard.ScoreboardCriterion;
 import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.slf4j.Logger;
 
@@ -23,11 +24,13 @@ import java.util.TimerTask;
 
 import static kituin.github.uinminingboard.Middleware.*;
 import static net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED;
+import static net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING;
 
 public class UinMiningBoard implements ModInitializer {
     public static String MOD_ID = "uin_mining_board";
     public static UinMiningBoardConfig CONFIG = UinMiningBoardConfig.loadConfig();
     public static Middleware MIDDLEWARE;
+    public static Timer TIMER;
     public static final Logger LOGGER = LogUtils.getLogger();
 
     @Override
@@ -37,7 +40,6 @@ public class UinMiningBoard implements ModInitializer {
         SERVER_STARTED.register((server) -> {
             SCOREBOARD = server.getScoreboard();
             try{
-
                 MINE_OBJECTIVE = server.getScoreboard().addObjective(
                         MOD_ID + "_mine",
                         ScoreboardCriterion.DUMMY,
@@ -62,8 +64,8 @@ public class UinMiningBoard implements ModInitializer {
             server.getScoreboard().updateObjective(MINE_OBJECTIVE);
             server.getScoreboard().updateObjective(DEATH_OBJECTIVE);
             MIDDLEWARE = new Middleware();
-            Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
+            TIMER = new Timer();
+            TIMER.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     ScoreboardObjective objectiveForSlot = SCOREBOARD.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
@@ -74,17 +76,19 @@ public class UinMiningBoard implements ModInitializer {
                         SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, DEATH_OBJECTIVE);
                         LOGGER.info("更换计分板->死亡榜");
                     } else {
-                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
-                        LOGGER.info("更换计分板->关闭");
+                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
+                        LOGGER.info("更换计分板->挖掘榜");
                     }
                 }
             }, 0, CONFIG.interval * 1000L);
         });
+        SERVER_STOPPING.register((server)->{
+            TIMER.cancel();
+        });
         // 破坏方块事件
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, entity) -> Middleware.addScorePreBroken(player.getUuidAsString()));
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, entity) -> Middleware.updateScorePreBroken((ServerPlayerEntity) player));
         // 进入服务器事件
         PlayerJoinedCallback.EVENT.register((player) -> {
-            MIDDLEWARE.putUuid2Name(player);
             player.getServer().getScoreboard().updateExistingObjective(MINE_OBJECTIVE);
             player.getServer().getScoreboard().updateExistingObjective(DEATH_OBJECTIVE);
             return null;
@@ -94,10 +98,6 @@ public class UinMiningBoard implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
                 LiteralArgumentBuilder.<ServerCommandSource>literal("uinminingboard").executes(UinMiningBoardCommand::help)
                         .then(LiteralArgumentBuilder.<ServerCommandSource>literal("help").executes(UinMiningBoardCommand::help))
-                        .then(LiteralArgumentBuilder.<ServerCommandSource>literal("redirect").requires(source -> source.hasPermissionLevel(4))
-                                .then(RequiredArgumentBuilder.<ServerCommandSource, EntitySelector>argument("player", EntityArgumentType.player())
-                                        .executes(UinMiningBoardCommand::redirect)
-                                ))
                         .then(LiteralArgumentBuilder.<ServerCommandSource>literal("ban").requires(source -> source.hasPermissionLevel(4))
                                 .then(RequiredArgumentBuilder.<ServerCommandSource, EntitySelector>argument("player", EntityArgumentType.player())
                                         .executes(UinMiningBoardCommand::ban)
