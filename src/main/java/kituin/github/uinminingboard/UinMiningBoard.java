@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.scoreboard.ScoreboardCriterion;
+import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -37,12 +38,25 @@ public class UinMiningBoard implements ModInitializer {
             SCOREBOARD = server.getScoreboard();
             try{
 
-                MINE_OBJECTIVE = server.getScoreboard().addObjective(MOD_ID + "_mine", ScoreboardCriterion.DUMMY, Text.literal(CONFIG.displayMineName), ScoreboardCriterion.RenderType.INTEGER);
-                DEATH_OBJECTIVE = server.getScoreboard().addObjective("deaths", ScoreboardCriterion.DEATH_COUNT, Text.literal(CONFIG.displayDeathName), ScoreboardCriterion.RenderType.INTEGER);
+                MINE_OBJECTIVE = server.getScoreboard().addObjective(
+                        MOD_ID + "_mine",
+                        ScoreboardCriterion.DUMMY,
+                        Text.literal(CONFIG.displayMineName),
+                        ScoreboardCriterion.RenderType.INTEGER,
+                        false,
+                        null);
+                DEATH_OBJECTIVE = server.getScoreboard().addObjective(
+                        MOD_ID + "_deaths",
+                        ScoreboardCriterion.DEATH_COUNT,
+                        Text.literal(CONFIG.displayDeathName),
+                        ScoreboardCriterion.RenderType.INTEGER,
+                        false,
+                        null
+                );
                 LOGGER.info("添加计分板");
             }catch (IllegalArgumentException e){
-                MINE_OBJECTIVE = server.getScoreboard().getObjective(MOD_ID + "_mine");
-                DEATH_OBJECTIVE = server.getScoreboard().getObjective("deaths");
+                MINE_OBJECTIVE = server.getScoreboard().getNullableObjective(MOD_ID + "_mine");
+                DEATH_OBJECTIVE = server.getScoreboard().getNullableObjective(MOD_ID + "_deaths");
                 LOGGER.info("加载计分板");
             }
             server.getScoreboard().updateObjective(MINE_OBJECTIVE);
@@ -52,17 +66,16 @@ public class UinMiningBoard implements ModInitializer {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-
-                    ScoreboardObjective objectiveForSlot = SCOREBOARD.getObjectiveForSlot(1);
+                    ScoreboardObjective objectiveForSlot = SCOREBOARD.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
                     if (objectiveForSlot == null) {
-                        SCOREBOARD.setObjectiveSlot(1, MINE_OBJECTIVE);
+                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
                         LOGGER.info("更换计分板->挖掘榜");
                     } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
-                        SCOREBOARD.setObjectiveSlot(1, DEATH_OBJECTIVE);
+                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, DEATH_OBJECTIVE);
                         LOGGER.info("更换计分板->死亡榜");
                     } else {
-                        SCOREBOARD.setObjectiveSlot(1, MINE_OBJECTIVE);
-                        LOGGER.info("更换计分板->挖掘榜");
+                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
+                        LOGGER.info("更换计分板->关闭");
                     }
                 }
             }, 0, CONFIG.interval * 1000L);
@@ -74,8 +87,6 @@ public class UinMiningBoard implements ModInitializer {
             MIDDLEWARE.putUuid2Name(player);
             player.getServer().getScoreboard().updateExistingObjective(MINE_OBJECTIVE);
             player.getServer().getScoreboard().updateExistingObjective(DEATH_OBJECTIVE);
-            Middleware.show(player.getServer());
-            Middleware.updateAll();
             return null;
         });
 

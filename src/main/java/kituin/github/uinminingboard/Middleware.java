@@ -1,10 +1,7 @@
 package kituin.github.uinminingboard;
 
 import kituin.github.uinminingboard.data.FileData;
-import net.minecraft.scoreboard.ScoreboardCriterion;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.scoreboard.ScoreboardPlayerScore;
-import net.minecraft.scoreboard.ServerScoreboard;
+import net.minecraft.scoreboard.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -36,29 +33,28 @@ public class Middleware {
             return;
         }
         String playerName = UUID_DATA.getItem(uuid);
-        ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(playerName, MINE_OBJECTIVE);
+        ScoreAccess playerScore = SCOREBOARD.getOrCreateScore(ScoreHolder.fromName(playerName), MINE_OBJECTIVE);
         int score = playerScore.getScore() + 1;
         SCORE_DATA.addItem(REDIRECT_DATA.getItemOrDefault(uuid), Integer.toString(score));
         playerScore.setScore(score);
-        SCOREBOARD.updateScore(playerScore);
     }
 
     public void putRedirect(ServerPlayerEntity player) {
         String uuid = player.getUuidAsString();
         if (!REDIRECT_DATA.containsKey(uuid)) {
             REDIRECT_DATA.addItem(uuid, uuid);
-            LOGGER.info("redirect.json <- " + uuid + "重定向");
+            LOGGER.info("redirect.json <- {}重定向", uuid);
         }
     }
 
     public void putUuid2Name(ServerPlayerEntity player) {
         putRedirect(player);
         String redirectUuid = player.getUuidAsString();
-        String name = player.getEntityName();
+        String name = player.getName().getString();
         String uuid = REDIRECT_DATA.getItemOrDefault(redirectUuid);
         if (!UUID_DATA.containsKey(uuid)) {
             UUID_DATA.addItem(uuid, name);
-            LOGGER.info("uuid2name.json <- " + uuid + " (" + name + ")");
+            LOGGER.info("uuid2name.json <- {} ({})", uuid, name);
         }
     }
 
@@ -68,12 +64,9 @@ public class Middleware {
         if (playerName == null) {
             return;
         }
-        if (IGNORE_DATA.containsKey(uuid)) {
-            SCOREBOARD.updatePlayerScore(playerName, MINE_OBJECTIVE);
-        } else {
-            ScoreboardPlayerScore playerScore = SCOREBOARD.getPlayerScore(playerName, MINE_OBJECTIVE);
+        if (!IGNORE_DATA.containsKey(uuid)) {
+            ScoreAccess playerScore = SCOREBOARD.getOrCreateScore(ScoreHolder.fromName(playerName), MINE_OBJECTIVE);
             playerScore.setScore(Integer.parseInt(SCORE_DATA.getItem(uuid)));
-            SCOREBOARD.updateScore(playerScore);
         }
     }
 
@@ -84,13 +77,16 @@ public class Middleware {
     }
 
     public static void show(MinecraftServer server) {
-        ScoreboardObjective objectiveForSlot = server.getScoreboard().getObjectiveForSlot(1);
-        if (objectiveForSlot == null) {
-            server.getScoreboard().setObjectiveSlot(1, MINE_OBJECTIVE);
-        } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
-            server.getScoreboard().setObjectiveSlot(1, MINE_OBJECTIVE);
-        } else {
-            server.getScoreboard().setObjectiveSlot(1, DEATH_OBJECTIVE);
-        }
+//        ScoreboardObjective objectiveForSlot = server.getScoreboard().getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+//        if (objectiveForSlot == null) {
+//            server.getScoreboard().setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
+//            LOGGER.info("更换计分板->挖掘榜");
+//        } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
+//            server.getScoreboard().setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, DEATH_OBJECTIVE);
+//            LOGGER.info("更换计分板->死亡榜");
+//        } else {
+//            server.getScoreboard().setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
+//            LOGGER.info("更换计分板->关闭");
+//        }
     }
 }
