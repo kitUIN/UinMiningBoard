@@ -20,6 +20,13 @@ public class Middleware {
         IGNORE_DATA = FileData.load("ignore");
     }
 
+    public static void updateScorePreBrokenManually(ServerPlayerEntity player) {
+        if (IGNORE_DATA.containsKey(player.getUuidAsString())) return;
+        if (player.isInCreativeMode()) return;
+        String playerName = player.getDisplayName().getString();
+        ScoreAccess playerScore = SCOREBOARD.getOrCreateScore(ScoreHolder.fromName(playerName), MINE_OBJECTIVE);
+        playerScore.incrementScore(1);
+    }
 
     public static void updateScorePreBroken(ServerPlayerEntity player) {
         if (IGNORE_DATA.containsKey(player.getUuidAsString())) return;
@@ -55,12 +62,13 @@ public class Middleware {
         String playerName = player.getDisplayName().getString();
         SCOREBOARD.removeScore(ScoreHolder.fromName(playerName), obj);
     }
+
     private static int score(ServerPlayerEntity player, ScoreboardObjective obj) {
         String playerName = player.getDisplayName().getString();
         return SCOREBOARD.getScore(ScoreHolder.fromName(playerName), obj).getScore();
     }
 
-    private  static int getAllMinedBlocksStats(ServerPlayerEntity player) {
+    private static int getAllMinedBlocksStats(ServerPlayerEntity player) {
         int total = 0;
         for (Identifier blockId : Registries.BLOCK.getIds()) {
             Stat<Block> minedStat = Stats.MINED.getOrCreateStat(Registries.BLOCK.get(blockId));

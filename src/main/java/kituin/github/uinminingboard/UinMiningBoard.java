@@ -11,9 +11,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.command.EntitySelector;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.scoreboard.ScoreboardCriterion;
-import net.minecraft.scoreboard.ScoreboardDisplaySlot;
-import net.minecraft.scoreboard.ScoreboardObjective;
+import net.minecraft.scoreboard.*;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -32,6 +30,23 @@ public class UinMiningBoard implements ModInitializer {
     public static Middleware MIDDLEWARE;
     public static Timer TIMER;
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    public static void setTimer() {
+        TIMER = new Timer();
+        TIMER.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ScoreboardObjective objectiveForSlot = SCOREBOARD.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+                if (objectiveForSlot == null) {
+                    SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
+                } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
+                    SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, DEATH_OBJECTIVE);
+                } else {
+                    SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
+                }
+            }
+        }, 0, CONFIG.interval * 1000L);
+    }
 
     @Override
     public void onInitialize() {
@@ -64,36 +79,28 @@ public class UinMiningBoard implements ModInitializer {
             }
             server.getScoreboard().updateObjective(MINE_OBJECTIVE);
             server.getScoreboard().updateObjective(DEATH_OBJECTIVE);
-            TIMER = new Timer();
-            TIMER.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    ScoreboardObjective objectiveForSlot = SCOREBOARD.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
-                    if (objectiveForSlot == null) {
-                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
-                        LOGGER.info("更换计分板->挖掘榜");
-                    } else if (objectiveForSlot.equals(MINE_OBJECTIVE)) {
-                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, DEATH_OBJECTIVE);
-                        LOGGER.info("更换计分板->死亡榜");
-                    } else {
-                        SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, MINE_OBJECTIVE);
-                        LOGGER.info("更换计分板->挖掘榜");
-                    }
-                }
-            }, 0, CONFIG.interval * 1000L);
+            setTimer();
         });
         SERVER_STOPPING.register((server) -> {
             SCOREBOARD.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
             TIMER.cancel();
         });
         // 破坏方块事件
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, entity) -> Middleware.updateScorePreBroken((ServerPlayerEntity) player));
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, entity) -> Middleware.updateScorePreBrokenManually((ServerPlayerEntity) player));
         // 进入服务器事件
         PlayerJoinedCallback.EVENT.register((player) -> {
+            String playerName = player.getDisplayName().getString();
+            ServerScoreboard scoreboard = player.getServer().getScoreboard();
+            if (playerName.startsWith("bot_") || playerName.startsWith("BOT_")) {
+                IGNORE_DATA.addItem(player.getUuidAsString(), String.valueOf(System.currentTimeMillis()));
+                Middleware.cleanScorePreBroken(player);
+                Middleware.cleanScoreDeath(player);
+                return null;
+            }
             Middleware.updateScorePreBroken(player);
             Middleware.updateScoreDeath(player);
-            player.getServer().getScoreboard().updateExistingObjective(MINE_OBJECTIVE);
-            player.getServer().getScoreboard().updateExistingObjective(DEATH_OBJECTIVE);
+            scoreboard.updateExistingObjective(MINE_OBJECTIVE);
+            scoreboard.updateExistingObjective(DEATH_OBJECTIVE);
             return null;
         });
 

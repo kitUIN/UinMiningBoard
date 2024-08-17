@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import kituin.github.uinminingboard.Middleware;
+import kituin.github.uinminingboard.config.UinMiningBoardConfig;
 import kituin.github.uinminingboard.data.FileData;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
@@ -13,6 +14,8 @@ import net.minecraft.util.Formatting;
 import org.slf4j.Logger;
 
 import static kituin.github.uinminingboard.Middleware.*;
+import static kituin.github.uinminingboard.UinMiningBoard.CONFIG;
+import static kituin.github.uinminingboard.UinMiningBoard.setTimer;
 import static net.minecraft.text.HoverEvent.Action.SHOW_TEXT;
 
 public class UinMiningBoardCommand {
@@ -134,6 +137,8 @@ public class UinMiningBoardCommand {
 
     public static int reload(CommandContext<ServerCommandSource> context) {
         IGNORE_DATA = FileData.load("ignore");
+        UinMiningBoardConfig.saveConfig(CONFIG);
+        setTimer();
         context.getSource().sendFeedback(() -> Text.literal("数据文件已经重载"), false);
         return 1;
     }
